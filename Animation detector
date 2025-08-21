@@ -1,0 +1,327 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
+
+-- Local Player
+local player = Players.LocalPlayer
+
+-- Create ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Name = "AnimationDetectorGui"
+screenGui.ResetOnSpawn = false
+
+-- Create Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 350, 0, 400)
+frame.Position = UDim2.new(0.5, -175, 0.5, -200)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.ClipsDescendants = true
+frame.Parent = screenGui
+
+-- Add UICorner for rounded edges
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.Parent = frame
+
+-- Add UIGradient for background
+local uiGradient = Instance.new("UIGradient")
+uiGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+})
+uiGradient.Rotation = 45
+uiGradient.Parent = frame
+
+-- Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -50, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Animation Detector"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+-- Minimize Button
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Position = UDim2.new(1, -35, 0, 5)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+minimizeButton.Text = "-"
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.TextScaled = true
+minimizeButton.Font = Enum.Font.Gotham
+minimizeButton.Parent = titleBar
+local minimizeCorner = Instance.new("UICorner")
+minimizeCorner.CornerRadius = UDim.new(0, 8)
+minimizeCorner.Parent = minimizeButton
+
+-- Current Animation ID Display
+local idFrame = Instance.new("Frame")
+idFrame.Size = UDim2.new(1, -20, 0, 50)
+idFrame.Position = UDim2.new(0, 10, 0, 50)
+idFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+idFrame.BorderSizePixel = 0
+idFrame.Parent = frame
+local idFrameCorner = Instance.new("UICorner")
+idFrameCorner.CornerRadius = UDim.new(0, 8)
+idFrameCorner.Parent = idFrame
+
+local idLabel = Instance.new("TextLabel")
+idLabel.Size = UDim2.new(1, -100, 1, 0)
+idLabel.Position = UDim2.new(0, 10, 0, 0)
+idLabel.BackgroundTransparency = 1
+idLabel.Text = "ID: None"
+idLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+idLabel.TextScaled = true
+idLabel.Font = Enum.Font.Gotham
+idLabel.TextXAlignment = Enum.TextXAlignment.Left
+idLabel.Parent = idFrame
+
+-- Copy Button
+local copyButton = Instance.new("TextButton")
+copyButton.Size = UDim2.new(0, 80, 0, 30)
+copyButton.Position = UDim2.new(1, -90, 0, 10)
+copyButton.BackgroundColor3 = Color3.fromRGB(0, 120, 215)
+copyButton.Text = "Copy"
+copyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyButton.TextScaled = true
+copyButton.Font = Enum.Font.Gotham
+copyButton.Parent = idFrame
+local copyCorner = Instance.new("UICorner")
+copyCorner.CornerRadius = UDim.new(0, 8)
+copyCorner.Parent = copyButton
+
+-- Play Button
+local playButton = Instance.new("TextButton")
+playButton.Size = UDim2.new(0, 80, 0, 30)
+playButton.Position = UDim2.new(1, -180, 0, 10)
+playButton.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+playButton.Text = "Play"
+playButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+playButton.TextScaled = true
+playButton.Font = Enum.Font.Gotham
+playButton.Parent = idFrame
+local playCorner = Instance.new("UICorner")
+playCorner.CornerRadius = UDim.new(0, 8)
+playCorner.Parent = playButton
+
+-- Animation History Frame
+local historyFrame = Instance.new("Frame")
+historyFrame.Size = UDim2.new(1, -20, 0, 270)
+historyFrame.Position = UDim2.new(0, 10, 0, 110)
+historyFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+historyFrame.BorderSizePixel = 0
+historyFrame.Parent = frame
+local historyCorner = Instance.new("UICorner")
+historyCorner.CornerRadius = UDim.new(0, 8)
+historyCorner.Parent = historyFrame
+
+-- Clear Logs Button
+local clearButton = Instance.new("TextButton")
+clearButton.Size = UDim2.new(0, 80, 0, 30)
+clearButton.Position = UDim2.new(1, -90, 1, -40)
+clearButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+clearButton.Text = "Clear Logs"
+clearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearButton.TextScaled = true
+clearButton.Font = Enum.Font.Gotham
+clearButton.Parent = historyFrame
+local clearCorner = Instance.new("UICorner")
+clearCorner.CornerRadius = UDim.new(0, 8)
+clearCorner.Parent = clearButton
+
+-- ScrollingFrame for Animation History
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, -10, 1, -50)
+scrollingFrame.Position = UDim2.new(0, 5, 0, 5)
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.ScrollBarThickness = 4
+scrollingFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+scrollingFrame.Parent = historyFrame
+
+-- UIListLayout for History
+local uiListLayout = Instance.new("UIListLayout")
+uiListLayout.Padding = UDim.new(0, 5)
+uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+uiListLayout.Parent = scrollingFrame
+
+-- Variables
+local currentAnimationId = nil
+local humanoid = player.Character and player.Character:WaitForChild("Humanoid")
+local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+local animationHistory = {}
+local isMinimized = false
+local selectedHistoryButton = nil
+
+-- Function to create hover effect
+local function addHoverEffect(button)
+    local originalColor = button.BackgroundColor3
+    button.MouseEnter:Connect(function()
+        if button ~= selectedHistoryButton then
+            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(originalColor.R * 255 * 1.2, originalColor.G * 255 * 1.2, originalColor.B * 255 * 1.2)}):Play()
+        end
+    end)
+    button.MouseLeave:Connect(function()
+        if button ~= selectedHistoryButton then
+            TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = originalColor}):Play()
+        end
+    end)
+end
+
+-- Apply hover effects
+addHoverEffect(copyButton)
+addHoverEffect(playButton)
+addHoverEffect(minimizeButton)
+addHoverEffect(clearButton)
+
+-- Function to update selected history button
+local function updateSelectedButton(button)
+    if selectedHistoryButton then
+        TweenService:Create(selectedHistoryButton, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 60, 60)}):Play()
+    end
+    selectedHistoryButton = button
+    if button then
+        TweenService:Create(button, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(80, 80, 80)}):Play()
+    end
+end
+
+-- Function to add animation to history
+local function addToHistory(animId)
+    if not table.find(animationHistory, animId) then
+        table.insert(animationHistory, 1, animId)
+        if #animationHistory > 10 then
+            table.remove(animationHistory, #animationHistory)
+        end
+        
+        -- Clear current history
+        for _, child in ipairs(scrollingFrame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+        
+        -- Populate history
+        for i, id in ipairs(animationHistory) do
+            local historyButton = Instance.new("TextButton")
+            historyButton.Size = UDim2.new(1, -10, 0, 30)
+            historyButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+            historyButton.Text = id
+            historyButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+            historyButton.TextScaled = true
+            historyButton.Font = Enum.Font.Gotham
+            historyButton.LayoutOrder = i
+            historyButton.Parent = scrollingFrame
+            local historyCorner = Instance.new("UICorner")
+            historyCorner.CornerRadius = UDim.new(0, 6)
+            historyCorner.Parent = historyButton
+            addHoverEffect(historyButton)
+            
+            historyButton.MouseButton1Click:Connect(function()
+                currentAnimationId = id
+                idLabel.Text = "ID: " .. id
+                updateSelectedButton(historyButton)
+                StarterGui:SetCore("SendNotification", {
+                    Title = "Selected",
+                    Text = "Animation ID selected.",
+                    Duration = 2
+                })
+            end)
+        end
+        
+        scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y)
+    end
+end
+
+-- Function to clear history
+local function clearHistory()
+    animationHistory = {}
+    for _, child in ipairs(scrollingFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    updateSelectedButton(nil)
+    StarterGui:SetCore("SendNotification", {
+        Title = "History Cleared",
+        Text = "Animation history has been cleared.",
+        Duration = 2
+    })
+end
+
+-- Function to update GUI with Animation ID
+local function updateGui(animationTrack)
+    if animationTrack and animationTrack.Animation then
+        local animId = animationTrack.Animation.AnimationId
+        idLabel.Text = "ID: " .. animId
+        currentAnimationId = animId
+        addToHistory(animId)
+        updateSelectedButton(nil) -- Deselect history when new animation plays
+    else
+        idLabel.Text = "ID: None"
+        currentAnimationId = nil
+        updateSelectedButton(nil)
+    end
+end
+
+-- Function to detect animation changes
+local function setupAnimationDetection()
+    if not humanoid or not animator then
+        player.CharacterAdded:Connect(function(character)
+            humanoid = character:WaitForChild("Humanoid")
+            animator = humanoid:WaitForChild("Animator")
+            animator.AnimationPlayed:Connect(function(animationTrack)
+                updateGui(animationTrack)
+            end)
+        end)
+    else
+        animator.AnimationPlayed:Connect(function(animationTrack)
+            updateGui(animationTrack)
+        end)
+    end
+end
+
+-- Copy Button Functionality
+copyButton.MouseButton1Click:Connect(function()
+    if currentAnimationId then
+        setclipboard(currentAnimationId)
+        StarterGui:SetCore("SendNotification", {
+            Title = "Copied!",
+            Text = "Animation ID copied to clipboard.",
+            Duration = 2
+        })
+    end
+end)
+
+-- Play Button Functionality
+playButton.MouseButton1Click:Connect(function()
+    if currentAnimationId and humanoid and animator then
+        local animation = Instance.new("Animation")
+        animation.AnimationId = currentAnimationId
+        local animationTrack = animator:LoadAnimation(animation)
+        animationTrack:Play()
+        animation:Destroy()
+    end
+end)
+
+-- Clear Logs Button Functionality
+clearButton.MouseButton1Click:Connect(clearHistory)
+
+-- Minimize/Maximize Functionality
+minimizeButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    local targetSize = isMinimized and UDim2.new(0, 350, 0, 40) or UDim2.new(0, 350, 0, 400)
+    minimizeButton.Text = is
