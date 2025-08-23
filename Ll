@@ -1,5 +1,5 @@
---// DynamicIslandNotify Module
---// Made custom for iOS Dynamic Island style notifications
+--// DynamicIslandNotify v2
+--// Dynamic Island styled notifications with custom sound + decal support
 
 local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
@@ -9,7 +9,7 @@ local DynamicIslandNotify = {}
 -- Settings
 local MAX_NOTIFICATIONS = 3
 local NOTIFICATION_LIFETIME = 4 -- seconds
-local QUEUE_MODE = "Replace" -- "Replace" or "Queue"
+local QUEUE_MODE = "Replace"
 
 -- Container
 local ScreenGui = Instance.new("ScreenGui")
@@ -21,30 +21,38 @@ ScreenGui.Parent = game:GetService("CoreGui")
 local Container = Instance.new("Frame")
 Container.Name = "NotificationContainer"
 Container.AnchorPoint = Vector2.new(0,0)
-Container.Position = UDim2.new(0, 20, 0, 40) -- Top-left corner
+Container.Position = UDim2.new(0, 20, 0, 40)
 Container.Size = UDim2.new(0, 300, 1, -40)
 Container.BackgroundTransparency = 1
 Container.Parent = ScreenGui
 
--- Storage
 local activeNotifications = {}
 
--- Default Sound
-local defaultSound = Instance.new("Sound")
-defaultSound.SoundId = "rbxassetid://9118823106" -- soft iOS style ding
-defaultSound.Volume = 1
-defaultSound.Parent = SoundService
+-- Default sounds for each type
+local DefaultSounds = {
+    Info = "rbxassetid://9118823106",    -- soft ping
+    Success = "rbxassetid://6026984224", -- success chime
+    Warning = "rbxassetid://6026984226", -- warning tone
+    Error = "rbxassetid://6026984225",   -- error buzz
+}
 
---// Helper: Create Notification
+-- Default colors
+local TypeColors = {
+    Info = Color3.fromRGB(0,162,255),
+    Success = Color3.fromRGB(0,200,100),
+    Warning = Color3.fromRGB(255,200,0),
+    Error = Color3.fromRGB(220,50,50),
+}
+
+--// Create Notification
 function DynamicIslandNotify:Notify(config)
     local title = config.Title or "Notification"
     local msg = config.Message or ""
-    local type = config.Type or "Info" -- Info, Success, Warning, Error
-    local color = Color3.fromRGB(0, 162, 255) -- default blue
+    local type = config.Type or "Info"
+    local soundId = config.SoundId or DefaultSounds[type]
+    local decalId = config.DecalId -- optional image
 
-    if type == "Success" then color = Color3.fromRGB(0, 200, 100) end
-    if type == "Error" then color = Color3.fromRGB(220, 50, 50) end
-    if type == "Warning" then color = Color3.fromRGB(255, 200, 0) end
+    local color = TypeColors[type] or TypeColors.Info
 
     -- Limit active notifications
     if #activeNotifications >= MAX_NOTIFICATIONS then
@@ -54,30 +62,43 @@ function DynamicIslandNotify:Notify(config)
         end
     end
 
-    -- Main frame (Dynamic Island pill)
+    -- Main frame (pill style)
     local notif = Instance.new("Frame")
-    notif.Size = UDim2.new(0, 0, 0, 0) -- starts tiny
+    notif.Size = UDim2.new(0, 0, 0, 0)
     notif.Position = UDim2.new(0, 0, 0, #activeNotifications * 80)
-    notif.BackgroundColor3 = Color3.fromRGB(30,30,30)
-    notif.BackgroundTransparency = 0.2
+    notif.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    notif.BackgroundTransparency = 0.1
     notif.BorderSizePixel = 0
     notif.ClipsDescendants = true
     notif.Parent = Container
 
-    -- UICorner (rounded pill like Dynamic Island)
     local corner = Instance.new("UICorner", notif)
     corner.CornerRadius = UDim.new(0, 30)
 
-    -- UIStroke
     local stroke = Instance.new("UIStroke", notif)
     stroke.Color = color
-    stroke.Thickness = 1.5
-    stroke.Transparency = 0.3
+    stroke.Thickness = 2
+    stroke.Transparency = 0.2
+
+    -- Left icon/decal holder
+    local iconFrame = Instance.new("Frame")
+    iconFrame.Size = UDim2.new(0, 40, 0, 40)
+    iconFrame.Position = UDim2.new(0, 10, 0.5, -20)
+    iconFrame.BackgroundTransparency = 1
+    iconFrame.Parent = notif
+
+    if decalId then
+        local icon = Instance.new("ImageLabel")
+        icon.Size = UDim2.new(1,0,1,0)
+        icon.BackgroundTransparency = 1
+        icon.Image = "rbxassetid://"..decalId
+        icon.Parent = iconFrame
+    end
 
     -- Title
     local titleLabel = Instance.new("TextLabel")
-    titleLabel.Size = UDim2.new(1, -20, 0, 24)
-    titleLabel.Position = UDim2.new(0, 10, 0, 8)
+    titleLabel.Size = UDim2.new(1, -60, 0, 24)
+    titleLabel.Position = UDim2.new(0, 60, 0, 8)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title
     titleLabel.Font = Enum.Font.GothamBold
@@ -88,8 +109,8 @@ function DynamicIslandNotify:Notify(config)
 
     -- Message
     local msgLabel = Instance.new("TextLabel")
-    msgLabel.Size = UDim2.new(1, -20, 0, 20)
-    msgLabel.Position = UDim2.new(0, 10, 0, 34)
+    msgLabel.Size = UDim2.new(1, -60, 0, 20)
+    msgLabel.Position = UDim2.new(0, 60, 0, 34)
     msgLabel.BackgroundTransparency = 1
     msgLabel.Text = msg
     msgLabel.Font = Enum.Font.Gotham
@@ -98,22 +119,37 @@ function DynamicIslandNotify:Notify(config)
     msgLabel.TextXAlignment = Enum.TextXAlignment.Left
     msgLabel.Parent = notif
 
-    -- Insert into active list
     table.insert(activeNotifications, notif)
 
     -- Play sound
-    defaultSound:Play()
+    if soundId then
+        local s = Instance.new("Sound")
+        s.SoundId = soundId
+        s.Volume = 1
+        s.Parent = SoundService
+        s:Play()
+        game:GetService("Debris"):AddItem(s,5)
+    end
 
-    -- Animate expand (Dynamic Island style)
-    TweenService:Create(notif, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        {Size = UDim2.new(0, 260, 0, 60)}):Play()
+    -- Entry animation (expand → bounce)
+    TweenService:Create(notif, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 280, 0, 60)}):Play()
+
+    -- Pulse effect (like iPhone)
+    task.delay(0.4, function()
+        TweenService:Create(notif, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 300, 0, 65)}):Play()
+        task.wait(0.15)
+        TweenService:Create(notif, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            {Size = UDim2.new(0, 280, 0, 60)}):Play()
+    end)
 
     -- Auto close
     task.delay(NOTIFICATION_LIFETIME, function()
         if notif and notif.Parent then
-            TweenService:Create(notif, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+            TweenService:Create(notif, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
                 {Size = UDim2.new(0, 0, 0, 0)}):Play()
-            task.wait(0.3)
+            task.wait(0.25)
             notif:Destroy()
         end
     end)
